@@ -1,0 +1,2 @@
+Various pieces of code for use in the lab.
+Mainly coincidence-counting.

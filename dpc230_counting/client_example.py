@@ -25,10 +25,13 @@ class client:
         print 'Got %s back from the server' % response
 
 if __name__=='__main__':
-    while True:
-        message=raw_input(' > ')
-        c=client()
-        c.say(message+'\n')
+    c=client()
+    try:
+        while True:
+            message=raw_input(' > ')
+            c.say(message)
+    finally:
+        print 'Closing connections...'
         c.kill()
 
 

@@ -1,23 +1,42 @@
-#import socket
+import socket
 import sys
-import SocketServer, socket
 
+class dpc230_counting_server:        
+    def __init__(self):
+        ''' 
+        This server continously acquires counts from the DPC230,
+        and serves them over TCP/IP
+        '''
+        self.port=9999
 
-class counting_system_tcp_handler(SocketServer.StreamRequestHandler):        
-    def handle(self):
-        self.data = self.rfile.readline().strip()
-        print '%s wrote %s' % (self.client_address[0], self.data)
-        self.request.sendall(self.data.upper())
-        self.request.close()
+    def start(self):
+        ''' Start up the server '''
+        # Create a TCP/IP socket
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.bind(('localhost', self.port))
 
-class counting_system_server(SocketServer.TCPServer):
-    def server_bind(self):
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.bind(self.server_address)
+        # Wait for a connection
+        self.sock.listen(1)
+        print 'Listening for connections on %d ...' % self.port
+        while True:
+            self.connection, self.client_address = self.sock.accept()
+            print 'Connected to client %s, %s' % self.client_address
+            self.mainloop()
+            print 'Lost connection with %s, %s' % self.client_address
+            self.connection.close()
 
-if __name__ == "__main__":
-    HOST, PORT = 'localhost', 9999
-    server = counting_system_server((HOST, PORT), counting_system_tcp_handler)
-    server.serve_forever()
+    def mainloop(self):
+        ''' The main listening loop '''
+        while True:
+            message = self.connection.recv(4096)
+            if message:
+                print 'Recieved %s' % message
+                self.connection.sendall(message)
+            else:
+                return
 
+if __name__=='__main__':
+    server=dpc230_counting_server()
+    server.start()
 

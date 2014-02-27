@@ -1,32 +1,33 @@
 import socket
-from numpy import *
 
 class client:
     def __init__(self):
-        self.connected = 0
-        self.sockobj = None
-        self.debug=False
+        ''' An example client for the DPC230 server '''
         self.connect()
-        
+
+
     def connect(self):
         serverHost = 'localhost'
         serverPort = 50007
-        print 'Initializing client...', 
-        self.sockobj = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sockobj.connect((serverHost, serverPort))
-        self.connected = True
+        print 'Trying to connect to server on port %d ...' % serverPort, 
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.connect((serverHost, serverPort))
         print 'Done'
+
 
     def kill(self):
         print 'Closing client...'
-        self.sockobj.close()    
-        self.connected=False
-    
-    def say(self, command):
-        self.sockobj.sendall(command)
-        data = self.sockobj.recv(65536)
-        return data
+        self.sock.close()    
+
+
+    def say(self, message):
+        print 'Sending %s' % message
+        self.sock.sendall(message)
+        response = self.sock.recv(65536)
+        print 'Got %s back from the server' % response
 
 if __name__=='__main__':
     c=client()
-    c.say('awd')
+    while True:
+        message=raw_input(' > ')
+        c.say(message)

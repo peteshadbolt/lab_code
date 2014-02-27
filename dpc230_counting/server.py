@@ -1,5 +1,16 @@
 import socket
 import sys
+from multiprocessing import Process, Pipe
+
+def hardware_loop():
+	from hardware_server import hardware_server
+	s=hardware_server()
+	s.mainloop()
+	
+def postprocessing_loop():
+	from postprocessing_server import postprocessing_server
+	s=postprocessing_server()
+	s.mainloop()
 
 class dpc230_counting_server:        
     def __init__(self):
@@ -15,6 +26,12 @@ class dpc230_counting_server:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(('localhost', self.port))
+
+        # Start up the hardware/postprocessing sub-processes
+        hardware = Process(target=hardware_loop, name='hardware_server', args=())
+        hardware.start()
+        postprocessing = Process(target=postprocessing_loop, name='postprocessing_server', args=())
+        postprocessing.start()
 
         # Wait for a connection
         self.sock.listen(1)

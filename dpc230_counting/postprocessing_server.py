@@ -5,6 +5,6 @@ class postprocessing_server:
         pass
     def mainloop(self):
         while True:
-            #print 'Postprocessor is sleeping...'
+            print 'Postprocessor is sleeping...'
             sleep(2)
 

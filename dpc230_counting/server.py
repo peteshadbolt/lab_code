@@ -93,9 +93,18 @@ class dpc230_counting_server:
                 message = self.connection.recv(4096)
                 if not message: return
                 print 'Recieved %s' % message
-                self.connection.sendall(message)
+                self.handle_message(message)
+
             except socket.error:
                 return
+
+
+    def handle_message(self, message):
+        ''' Handle a message from the client '''
+        if message[0:3]=='int': 
+            self.connection.sendall('HEEHEHE')
+        else:
+            self.connection.sendall(message.upper())
 
 
 if __name__=='__main__':

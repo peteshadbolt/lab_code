@@ -1,5 +1,5 @@
 from time import sleep 
-import qy.hardware.dpc230
+from qy.hardware import dpc230
 
 class hardware_server:
     ''' Talk to the DPC230 '''
@@ -21,3 +21,5 @@ class hardware_server:
     def counting_callback(self, message):
         print message
 
+if __name__=='__main__':
+    hardware_server()

@@ -27,7 +27,7 @@ class hardware_server:
 
         # Choose a buffer
         which_buffer=self.photon_buffer_2 if self.photon_buffer_switch else self.photon_buffer_1
-        print 'Acquiring timetags to %s...' ,
+        print 'Acquiring timetags to %s...' % which_buffer,
         self.photon_buffer_switch = not self.photon_buffer_switch
         
         # Count for one second and send to postprocessor
@@ -43,7 +43,7 @@ class hardware_server:
 
     def counting_callback(self, message):
         ''' Gets called by the counting system '''
-        pass
+        return True
 
 if __name__=='__main__':
     h=hardware_server()

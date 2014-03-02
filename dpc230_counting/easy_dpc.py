@@ -10,7 +10,6 @@ class easy_dpc:
         self.photon_buffer_1=qy.settings.get('photon_buffer_1')
         self.photon_buffer_2=qy.settings.get('photon_buffer_2')
         self.dpc230=dpc230.dpc_daq(callback=callback)
-        self.dpc230.print_setup_summary()
 
 
     def count_once(self):

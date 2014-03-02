@@ -1,16 +1,21 @@
 import socket
 import sys
+import os
 from multiprocessing import Process, Pipe
 import time
 import qy.settings
 from easy_dpc import easy_dpc
 import msvcrt
-
+import logging
+logging.basicConfig(filename='server.log', 
+        level=logging.DEBUG, 
+        format='%(asctime)s %(levelname)s %(message)s',
+        datefmt='%m/%d/%Y %I:%M:%S %p')
 
 def postprocessing_loop(pipe):
 	from postprocessing_daemon import postprocessing_daemon
 	s=postprocessing_daemon(pipe)
-	s.mainloop()
+	s.main_loop()
 
 
 class dpc230_counting_server:        
@@ -20,11 +25,22 @@ class dpc230_counting_server:
         and serves them over TCP/IP
         '''
         self.port=9999
+        self.status_header=''
+        self.show_status('Booting up...')
 
 
+    def show_status(self, message=''):
+        ''' Pretty-print the status to the screen '''
+        #os.system('cls')
+        #print 'DPC230 server'
+        #print self.status_header
+        print message
+        #logging.info(self.status_header+' '+message)
+
+    
     def dpc_callback(self, message):        
         ''' Gets called periodically during dpc.count_once '''
-        print message
+        self.show_status(message)
         return True
 
 
@@ -41,34 +57,36 @@ class dpc230_counting_server:
         self.postprocessing.start()
 
         # Handle connections
-        self.connection_loop()
+        self.main_loop()
 
         # Finally, shut down
         self.shutdown()
 
-
     def shutdown(self):
         ''' Try to shut down the server carefully '''
-        print 'Shutting down server...'
+        self.show_status('Shutting down server ...')
         self.pipe_tx.send('shutdown')
         self.connection.close()
         self.dpc.kill()
         time.sleep(1)
         self.postprocessing.terminate()
 
-    def connection_loop(self):
-        ''' An infinite loop, connecting and disconnecting clients '''
-        self.sock.listen(1)
-        print 'Listening for connections on %d ...' % self.port
-        while not msvcrt.kbhit():
-            self.connection, self.client_address = self.sock.accept()
-            print 'Connected to client %s, %s' % self.client_address
-            self.dpc=easy_dpc(callback=self.dpc_callback)
-            self.session_loop()
-            print 'Lost connection with %s, %s' % self.client_address
-            self.connection.close()
-            self.dpc.kill()
 
+    def main_loop(self):
+        ''' An infinite loop, connecting and disconnecting clients '''
+        self.dpc=easy_dpc(callback=self.dpc_callback)
+        self.status_header=self.dpc.dpc230.get_setup_summary()
+        self.show_status()
+        self.sock.listen(1)
+        self.show_status('Listening for connections on %d ...' % self.port)
+        while True:
+            self.connection, self.client_address = self.sock.accept()
+            self.status_header = 'Connected to client %s, %s' % self.client_address
+            self.show_status()
+            self.session_loop()
+            self.show_status('Lost connection with %s, %s' % self.client_address)
+            self.connection.close()
+        self.dpc.kill()
 
     def session_loop(self):
         ''' Get commands from a connected client '''
@@ -76,17 +94,22 @@ class dpc230_counting_server:
             try:
                 message = self.connection.recv(4096)
                 if not message: return
-                print 'Recieved %s' % message
                 self.handle_message(message)
 
             except socket.error:
                 return
 
+    def integrate_once(self):
+        ''' Integrate once, according to the current integration time '''
+        tdc1, tdc2 = self.dpc.count_once()
+        self.pipe_tx.send({'tdc1':tdc1, 'tdc2':tdc2})
+        self.connection.sendall('HEEHEHE')
+        self.show_status('Finished integrating')
 
     def handle_message(self, message):
         ''' Handle a message from the client '''
-        if message[0:3]=='int': 
-            self.connection.sendall('HEEHEHE')
+        if message == 'count': 
+            self.integrate_once()
         elif message=='shutdown':
             self.shutdown()
             sys.exit(0)

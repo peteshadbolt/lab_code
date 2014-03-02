@@ -8,8 +8,8 @@ import msvcrt
 
 
 def postprocessing_loop(pipe):
-	from postprocessing_server import postprocessing_server
-	s=postprocessing_server(pipe)
+	from postprocessing_daemon import postprocessing_daemon
+	s=postprocessing_daemon(pipe)
 	s.mainloop()
 
 
@@ -40,11 +40,21 @@ class dpc230_counting_server:
         self.postprocessing = Process(target=postprocessing_loop, name='postprocessing_server', args=(pipe_rx,))
         self.postprocessing.start()
 
-        # Wait for a connection
+        # Handle connections
         self.connection_loop()
 
-        print 'Shutting down server...'
+        # Finally, shut down
+        self.shutdown()
 
+
+    def shutdown(self):
+        ''' Try to shut down the server carefully '''
+        print 'Shutting down server...'
+        self.pipe_tx.send('shutdown')
+        self.connection.close()
+        self.dpc.kill()
+        time.sleep(1)
+        self.postprocessing.terminate()
 
     def connection_loop(self):
         ''' An infinite loop, connecting and disconnecting clients '''
@@ -77,6 +87,9 @@ class dpc230_counting_server:
         ''' Handle a message from the client '''
         if message[0:3]=='int': 
             self.connection.sendall('HEEHEHE')
+        elif message=='shutdown':
+            self.shutdown()
+            sys.exit(0)
         else:
             self.connection.sendall(message.upper())
 

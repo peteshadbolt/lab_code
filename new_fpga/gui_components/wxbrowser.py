@@ -1,5 +1,6 @@
 import wx
 import qy
+import qy.graphics
 import wxbasics
 
 class browser_input(wx.Panel):

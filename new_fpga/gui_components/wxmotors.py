@@ -36,7 +36,7 @@ class motors_panel(wx.Panel):
 		self.blocks=[]
 		self.need_values=True
 		
-		for i in range(int(qy.settings.lookup('motors_count'))):
+		for i in range(int(qy.settings.get('motors_count'))):
 			block=motor_block(self, i)
 			self.blocks.append(block)
 			mainsizer.Add(block, 0, wx.TOP|wx.EXPAND, border=2)

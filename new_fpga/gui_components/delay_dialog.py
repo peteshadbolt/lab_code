@@ -1,5 +1,6 @@
 import wx
 import qy
+import qy.settings
 import wxbasics
 
 class delay_line(wx.Panel):

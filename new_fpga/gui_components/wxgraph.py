@@ -1,5 +1,6 @@
 import wx
 import qy
+import qy.graphics
 import matplotlib
 matplotlib.rc('font', family='arial', size=10)
 matplotlib.interactive(False)
@@ -24,7 +25,6 @@ class curve:
         
     def add_point(self, value):
         ''' add a point to the curve and wrap around when we run out of history '''
-        print value
         self.ydata=np.append(self.ydata, value)
         if len(self.ydata)>self.history_size:
             self.ydata=self.ydata[1:]

@@ -1,5 +1,5 @@
 # program to manually control the laser
-from qy.hardware.toptica import toptica
+from qy.hardware import toptica
 import time
 
 print 'TOPTICA iBEAM\n'

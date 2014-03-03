@@ -38,12 +38,11 @@ class gui:
         self.hardware_pipe.send({'quit':None})
 
     def load_defaults(self):
-        patterns=qy.settings.lookup('realtime_browser_searches').split(',')
+        patterns=qy.settings.get('realtime.browser_searches')
         self.gui.browser.set_patterns(patterns)
         
     def save_defaults(self):
-        q=','.join(self.gui.browser.get_text_patterns())
-        qy.settings.write('realtime_browser_searches', q)
+        qy.settings.put('realtime.browser_searches', self.gui.browser.get_text_patterns())
         
         
 #########################################################################################       

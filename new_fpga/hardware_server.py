@@ -1,6 +1,6 @@
 import time
 import numpy as np
-from qython.hardware import fpga
+from qy.hardware import fpga
 
 class hardware_server:
     def __init__(self, postprocessing_pipe, gui_pipe):
@@ -36,7 +36,11 @@ class hardware_server:
         
     def connect_hardware(self):
         ''' try to connect to all the relevant hardware '''
-        self.fpga=fpga()
+        self.fpga=fpga(callback=self.fpga_callback)
+
+    def fpga_callback(self, info):
+        ''' Gets called by the FPGA '''
+        pass
         
     def disconnect_hardware(self):
         ''' disconnect from all hardware '''

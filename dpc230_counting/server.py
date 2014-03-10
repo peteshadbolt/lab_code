@@ -1,22 +1,15 @@
 import socket
-import sys
-import os
+import sys, os, time
 from multiprocessing import Process, Pipe
-import time
 import qy.settings
 from easy_dpc import easy_dpc
-import msvcrt
-import logging
-logging.basicConfig(filename='server.log', 
-        level=logging.DEBUG, 
-        format='%(asctime)s %(levelname)s %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p')
+import json
+
 
 def postprocessing_loop(pipe):
 	from postprocessing_daemon import postprocessing_daemon
 	s=postprocessing_daemon(pipe)
 	s.main_loop()
-
 
 class dpc230_counting_server:        
     def __init__(self):
@@ -24,20 +17,19 @@ class dpc230_counting_server:
         This server continously acquires counts from the DPC230,
         and serves them over TCP/IP
         '''
-        self.port=9999
+        self.port=qy.settings.get('counting.server_port')
         self.status_header=''
         self.show_status('Booting up...')
 
 
     def show_status(self, message=''):
         ''' Pretty-print the status to the screen '''
-        #os.system('cls')
-        #print 'DPC230 server'
-        #print self.status_header
+        os.system('cls')
+        print 'DPC230 server'
+        print self.status_header
         print message
-        #logging.info(self.status_header+' '+message)
-
     
+
     def dpc_callback(self, message):        
         ''' Gets called periodically during dpc.count_once '''
         self.show_status(message)
@@ -78,7 +70,7 @@ class dpc230_counting_server:
         self.status_header=self.dpc.dpc230.get_setup_summary()
         self.show_status()
         self.sock.listen(1)
-        self.show_status('Listening for connections on %d ...' % self.port)
+        self.show_status('Listening for connections on port %d ...' % self.port)
         while True:
             self.connection, self.client_address = self.sock.accept()
             self.status_header = 'Connected to client %s, %s' % self.client_address
@@ -89,7 +81,10 @@ class dpc230_counting_server:
         self.dpc.kill()
 
     def session_loop(self):
-        ''' Get commands from a connected client '''
+        ''' 
+        Watch for commands from a connected client, 
+        as well as the postprocessing thread.
+        '''
         while True:
             try:
                 message = self.connection.recv(4096)

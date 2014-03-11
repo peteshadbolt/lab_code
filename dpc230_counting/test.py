@@ -1,94 +1,157 @@
-from multiprocessing import Process, Pipe
-import time
+from multiprocessing import Process, Pipe 
+import time, sys
+import signal
 
 class worker:
     ''' A generic worker process with TX/RX pipes '''
     def __init__(self, tx, rx):
         self.tx=tx
         self.rx=rx
-        self.pass_on=[]
-        self.ignore=['ignore']
+        self.pass_on=['text']
+        self.name='Worker process'
+        # Create hook to SIGINT
+        signal.signal(signal.SIGINT, self.signal_handler)
+
 
     def mainloop(self):
-        ''' Keep on loopin '''
+        ''' Keep on looping '''
         while True:
             time.sleep(.1)
             while self.rx.poll():
                 message=self.rx.recv()
-                if message=='shutdown': 
-                    self.tx.send('shutdown')
-                    return
-                else:
-                    self.handle_message(message)
+                self.meta_handle_message(message)
+
+
+    def meta_handle_message(self, message):
+        ''' Handle or ignore a message. '''
+        if message[0]=='shutdown': 
+            self.tx.send(message)
+            self.shutdown()
+        elif message[0] in self.pass_on: 
+            self.tx.send(message)
+        else:
+            self.handle_message(message)
+
 
     def handle_message(self, message):
-        ''' Handle a message. This should be overridden '''
-        if message[0] in pass_on: 
-            self.tx.send(message)
-            return
-        elif message[0] in ignore: 
-            self.tx.send('ignored')
-            return
-        else:
-            output='%s got message "%s"' % (self.name, message)
-            self.tx.send(output)
+        ''' Handle a message which cannot be passed on '''
+        tag, data = message
+        self.send_text_message('%s got a message: %s: %s' % (self.name, tag, data))
+
+
+    def send_message(self, tag, data):
+        ''' Send a tag/data pair '''
+        self.tx.send((tag, data))
+
+
+    def send_text_message(self, text):
+        ''' Send a plain text message, which will bubble up to the main process '''
+        self.send_message('text', text)
+
+
+    def signal_handler(self, signal, frame):
+        ''' Try to handle SIGINT signals gracefully '''
+        self.shutdown()
+
+
+    def shutdown(self):
+        ''' Shut everything down '''
+        print 'Shut down %s' % self.name
+        sys.exit(0)
+
 
 
 class daq(worker):
     ''' The data acquisition process '''
     def __init__(self, tx, rx):
-        #print 'Booting up data aquisition process'
-        self.name='daq'
         worker.__init__(self, tx, rx)
+        self.name='daq'
         self.pass_on=['window', 'delays', 'time_cutoff_ms']
+        self.send_text_message('Booting up DAQ...')
         self.mainloop()
+
 
     def handle_message(self, message):
         ''' Handle a message coming from the client ''' 
         if message[0]=='count': 
-            print 'counting...'
-            time.sleep(5)
-            print 'done'
-            self.tx.send(['tdc', 'awd'])
+            self.count(message)
 
-        else:
-            self.tx.send('Unknown command')
+
+    def count(self, message):
+        ''' Initiate coincidence-counting '''
+        tag, data = message
+        context = data['context']
+        self.send_text_message('Starting to count...')
+        time.sleep(data['integration_time'])
+        self.send_text_message('Finished counting')
+        self.send_message('finished_counting', None)
+        self.send_message('tdc', \
+                {'filename':'C:/awdawdawd/', 'context':context})
+
+
+    def shutdown(self):
+        ''' Close connection to DPC-230 here '''
+        print 'Shut down the DAQ'
+        sys.exit(0)
+
+
 
 class post(worker):
     ''' The postprocessing process '''
     def __init__(self, tx, rx):
-        #print 'Booting up postprocessing process'
         self.name='post'
         worker.__init__(self, tx, rx)
-        self.ignore=['count']
+        self.pass_on+=['count', 'finished_counting']
+        self.send_text_message('Booting up postprocessing...')
         self.mainloop()
+
 
     def handle_message(self, message):
         ''' Handle a message coming from the client ''' 
         if message[0]=='tdc': 
-            self.handle_tdc(message[1])
+            self.handle_tdc(message)
         elif message[0]=='delays': 
-            self.set_delays(message[1:])
-        else:
-            self.tx.send('Unknown command')
+            self.set_delays(message[1])
+
 
     def set_delays(self, delays):
         ''' Set the delays '''
         print 'Set delays to %s' % delays
-        self.tx.send('Delays were changed')
+        self.send_text_message('Delays were changed')
 
-    def handle_tdc(self, filename):
+
+    def handle_tdc(self, message):
         ''' Process some timetags '''
-        time.sleep(4)
-        self.tx.send('here are your count rates')
+        tag, data=message
+        context = data['context']
+        filename = data['filename']
+        self.send_text_message('Starting to postprocess...')
+        time.sleep(1)
+        count_rates = {'a':0, 'b':1}
+        self.send_text_message('Finished postprocessing')
+        self.send_message('count_rates', \
+                {'count_rates':count_rates, 'context':context})
 
+
+    def shutdown(self):
+        ''' Close connection to DLL here '''
+        print 'Shut down the postprocessor'
+        sys.exit(0)
+        
 
 class coincidence_counter:
     ''' 
     An asynchrous coincidence counting system.
     Data aquisition and postprocessing run in parallel subprocesses.
     '''
-    def __init__(self):
+    def __init__(self, callback=None):
+        ''' Initialize both sub-processes '''
+        # Keep track of counting
+        self.queue_size=0
+
+        # Output of text
+        self.callback=callback if callback else sys.stderr.write
+
         # Generate the communication network
         self.tx, daq_rx = Pipe()
         daq_tx, post_rx = Pipe()
@@ -102,23 +165,45 @@ class coincidence_counter:
         self.post = Process(target=post, name='post', args=(post_tx, post_rx))
         self.post.start()
 
-    def send(self, message):
-        self.tx.send(message)
+    def send_message(self, tag, data):
+        ''' Send a tag/data pair '''
+        self.tx.send((tag, data))
+
+
+    def count(self, integration_time, context):
+        ''' Count coincidences '''
+        self.send_message('count', {'integration_time':integration_time,
+                         'context': context})
+        self.queue_size+=1
 
     def collect(self):
-        message=self.rx.recv()
-        return message
+        ''' Try to pick up some data '''
+        while True:
+            tag, data=self.rx.recv()
+            if tag=='text': 
+                callback(data)
+            elif tag=='finished_counting': 
+                self.queue_size+=-1
+                if self.queue_size==0: return None
+            elif tag=='count_rates': 
+                return data
 
     def shutdown(self):
-        self.tx.send('shutdown')
+        ''' Shut down carefully '''
+        self.send_message('shutdown', None)
 
 if __name__=='__main__':
-    c=coincidence_counter()
+    def callback(x):
+        pass
 
-    c.send(['count', 5])
-    for i in range(10):
-        c.send(['count', 5])
+    c=coincidence_counter(callback=callback)
+    for i in range(5):
+        c.count(1, {'i_value': i}) 
         print c.collect()
-
-
+    print c.collect()
     c.shutdown()
+
+    #for i in range(10):
+        #c.count(5, context={'i':i})
+        #print c.collect()
+

@@ -33,7 +33,7 @@ class daq(worker):
         ''' Handle a message coming from the client ''' 
         if message[0]=='window': 
             print 'set window to X'
-            self.tx.send(')
+            self.tx.send('a')
 
         elif message[0]=='delays': 
             print 'set delays to X'

@@ -9,10 +9,10 @@ def plot_curve(parameter_space, data, style):
     plt.xlim(0, 7)
     
     
-experiment_filename='data/5_experiment_sat15mar2014_1535pm.npy'
+experiment_filename='data/5_experiment_sat15mar2014_1640pm.npy'
 experiment=np.load(experiment_filename)
 
-parameter_space_filename='data/5_parameters_sat15mar2014_1535pm.npy'
+parameter_space_filename='data/5_parameters_sat15mar2014_1640pm.npy'
 parameter_space=np.load(parameter_space_filename)
 
 counts = experiment[:,0]
@@ -21,7 +21,7 @@ voltages = parameter_space
 fitted_params=fit_fringe(voltages, counts)
 
 print fitted_params
-fit_space=np.linspace(0, 6, 300)
+fit_space=np.linspace(0, 7, 300)
 fit_counts=counts_voltage(fitted_params, fit_space)
 
 plot_curve(fit_space, fit_counts, 'r-')

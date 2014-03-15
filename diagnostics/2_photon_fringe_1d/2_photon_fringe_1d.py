@@ -89,7 +89,7 @@ def plot_now(experiment, theory, parameter_space, do_fit):
             fitted_params=fit_to_data(experiment[:, column], parameter_space, guess=guess)
             fit_space=np.linspace(0, 3*pi, 300)
             fit=fit_func(fitted_params, fit_space)
-            plot_curve(fit_space, fit, 'r-')
+            plot_curve(fit_space, fit, 'b-')
         
     plt.savefig('plots/1d_sweep_%s.pdf' % (start_time,))
     plt.close()
@@ -147,15 +147,16 @@ fpga.read()
 fpga.read()
 table=calibration_table()
 
-heater_index = 5
+heater_index = 6
 #hold_table=[[0,pi/2],[2,0], [6,pi/2]]
-hold_table=list(enumerate([0,pi/2,0,0,0,0,0,pi/2]))
+hold_table=list(enumerate([pi/2,0,0,0,0,pi/2,0,pi/2]))
 
 # Take data
 acquire_data(heater_index, hold=hold_table, N=40)
 
 # Reload and fit
-#experiment_filename, theory_filename, param_filename = get_filenames(heater_index)
-#experiment=np.load(experiment_filename)
-#theory=np.load(theory_filename)
-#parameter_space=np.load(param_filename)
+experiment_filename, theory_filename, param_filename = get_filenames(heater_index)
+experiment=np.load(experiment_filename)
+theory=np.load(theory_filename)
+parameter_space=np.load(param_filename)
+plot_now(experiment, theory, parameter_space, do_fit=True)

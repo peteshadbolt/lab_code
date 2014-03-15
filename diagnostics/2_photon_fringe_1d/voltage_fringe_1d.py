@@ -65,8 +65,8 @@ def do_theory(phases, total_counts):
     probabilities=counts/float(np.sum(counts))
     return probabilities
 
-def plot_curve(parameter_space, data, style):
-    plt.plot(parameter_space, data, style)
+def plot_curve(parameter_space, data, style, alpha=1):
+    plt.plot(parameter_space, data, style, alpha=alpha)
     plt.grid(linestyle='-', color='gray')
     #plt.xticks([0, np.pi/2, np.pi, 3*np.pi/2], ['0', '$\pi/2$', '$\pi$', '$3\pi/2$'])
     #plt.xticks([0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi, 5*np.pi/2], ['0', '$\pi/2$', '$\pi$', '$3\pi/2$', '$2\pi$', '$5\pi/2$'])
@@ -80,7 +80,8 @@ def plot_now(experiment, theory, parameter_space, do_fit):
         plt.text(0.05, 0.95, labels[column], transform=plt.gca().transAxes, va='top')
            
         # Generate theory manifold and plot
-        plot_curve(parameter_space, theory[:, column], 'bx')
+        plot_curve(parameter_space, theory[:, column], 'r.')
+        plot_curve(parameter_space, theory[:, column], 'r-', alpha=.5)
         plot_curve(parameter_space, experiment[:, column], 'k.')
         
         if do_fit:
@@ -96,7 +97,7 @@ def plot_now(experiment, theory, parameter_space, do_fit):
     
 ############ DATA ACQUISITION
 def acquire_data(heater_index, N=20, hold=[]):
-    min_voltage, max_voltage=0, 6
+    min_voltage, max_voltage=0, 7
     parameter_space=np.linspace(min_voltage, max_voltage, N)
     experiment=np.zeros([N, 4])
     theory=np.zeros([N, 4])
@@ -140,7 +141,7 @@ start_time=timestamp()
 device=lo.beamsplitter_network(json='cnot_mz.json')
 simulator=lo.simulator(device, nphotons=2)
 simulator.set_input_state([1,3])
-simulator.set_visibility(0.95)
+simulator.set_visibility(0.99)
 dac=dac.dac()
 fpga=fpga()
 fpga.read()
@@ -155,7 +156,7 @@ hold_table=list(enumerate([0,pi/2,0,0,0,0,0,pi/2]))
 acquire_data(heater_index, hold=hold_table, N=20)
 
 # Reload and fit
-#experiment_filename, theory_filename, param_filename = get_filenames(heater_index)
-#experiment=np.load(experiment_filename)
-#theory=np.load(theory_filename)
-#parameter_space=np.load(param_filename)
+experiment_filename, theory_filename, param_filename = get_filenames(heater_index)
+experiment=np.load(experiment_filename)
+theory=np.load(theory_filename)
+parameter_space=np.load(param_filename)

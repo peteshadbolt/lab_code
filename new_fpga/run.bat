@@ -1,5 +1,5 @@
 @ echo off
 cd %~dp0
-copy realtime_counting.py realtime_counting.pyw > nul
-C:\Python27\python.exe realtime_counting.py
+copy realtime_counting.py main.pyw > nul
+C:\Python27\python.exe main.py
 PAUSE

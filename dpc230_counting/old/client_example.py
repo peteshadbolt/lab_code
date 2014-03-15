@@ -1,5 +1,6 @@
 import socket
 import sys
+from qy import settings
 
 class client:
     def __init__(self):
@@ -8,7 +9,7 @@ class client:
 
     def connect(self):
         serverHost = 'localhost'
-        serverPort = 9999
+        serverPort = settings.get('counting.server_port')
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             self.sock.connect((serverHost, serverPort))

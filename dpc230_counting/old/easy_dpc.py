@@ -6,10 +6,10 @@ class easy_dpc:
     def __init__(self, callback):
         ''' Set up defaults '''
         self.integration_time=1
-        self.photon_buffer_switch=0
+        self.photon_buffer_switch=False
         self.photon_buffer_1=qy.settings.get('photon_buffer_1')
         self.photon_buffer_2=qy.settings.get('photon_buffer_2')
-        self.dpc230=dpc230.dpc_daq(callback=callback)
+        self.dpc230=dpc230('hardware', callback=callback)
 
 
     def count_once(self):

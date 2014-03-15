@@ -1,5 +1,6 @@
 import numpy as np
 from qy.hardware.heaters import dac, calibration_table
+from qy.hardware.heaters import fitting
 from qy.hardware.fpga import fpga
 from qy.simulation import linear_optics as lo
 from time import sleep
@@ -31,8 +32,7 @@ def get_filenames(heater_index):
     param_filename='data/%d_parameters_%s.npy' % (heater_index,start_time)
     return experiment_filename, theory_filename, param_filename
 
-def do_experiment(phases, ontime=2, offtime=12):
-    voltages=table.get_voltages(phases)
+def do_experiment(voltages, ontime=2, offtime=12):
     dac.write_voltages(voltages)
     print 'warming up...',
     for j in range(ontime): 
@@ -53,7 +53,6 @@ def do_experiment(phases, ontime=2, offtime=12):
     return probabilities_expt, total_counts
     
 
-    
 def do_theory(phases, total_counts):
     device.set_phases(phases)
     c00=simulator.get_probability_quantum([1,3])
@@ -70,8 +69,8 @@ def plot_curve(parameter_space, data, style):
     plt.plot(parameter_space, data, style)
     plt.grid(linestyle='-', color='gray')
     #plt.xticks([0, np.pi/2, np.pi, 3*np.pi/2], ['0', '$\pi/2$', '$\pi$', '$3\pi/2$'])
-    plt.xticks([0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi, 5*np.pi/2], ['0', '$\pi/2$', '$\pi$', '$3\pi/2$', '$2\pi$', '$5\pi/2$'])
-    plt.xlim(0, pi*3)
+    #plt.xticks([0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi, 5*np.pi/2], ['0', '$\pi/2$', '$\pi$', '$3\pi/2$', '$2\pi$', '$5\pi/2$'])
+    plt.xlim(0, 7)
     plt.ylim(0,1)
     
 def plot_now(experiment, theory, parameter_space, do_fit):
@@ -97,8 +96,8 @@ def plot_now(experiment, theory, parameter_space, do_fit):
     
 ############ DATA ACQUISITION
 def acquire_data(heater_index, N=20, hold=[]):
-    min_phase, max_phase=0, 2*np.pi
-    parameter_space=np.linspace(min_phase, max_phase, N)
+    min_voltage, max_voltage=0, 6
+    parameter_space=np.linspace(min_voltage, max_voltage, N)
     experiment=np.zeros([N, 4])
     theory=np.zeros([N, 4])
         
@@ -111,12 +110,15 @@ def acquire_data(heater_index, N=20, hold=[]):
             print 'hold phase %d: %.3f' % (index, phase)
             phases[index]=phase
         
-        print 'sweep phase %d: %.3f' % (heater_index, parameter_1)
-        phases[heater_index] = parameter_1
-        print 'final phases',  phases.round(2)
+        voltages=np.array(table.get_voltages(phases))
+        print 'sweep voltage %d: %.3f' % (heater_index, parameter_1)
+        voltages[heater_index] = parameter_1
+        print 'final voltages',  voltages.round(2)
+        parameters=table.get_parameters(heater_index)
+        phases[heater_index] = fitting.phase_voltage(parameters, parameter_1)
         
         # Do the measurement
-        experiment[index_1], total_counts = do_experiment(phases)
+        experiment[index_1], total_counts = do_experiment(voltages)
         theory[index_1] = do_theory(phases, total_counts)
         
         # Plot
@@ -143,8 +145,6 @@ dac=dac.dac()
 fpga=fpga()
 fpga.read()
 fpga.read()
-fpga.read()
-fpga.read()
 table=calibration_table()
 
 heater_index = 5
@@ -152,7 +152,7 @@ heater_index = 5
 hold_table=list(enumerate([0,pi/2,0,0,0,0,0,pi/2]))
 
 # Take data
-acquire_data(heater_index, hold=hold_table, N=40)
+acquire_data(heater_index, hold=hold_table, N=20)
 
 # Reload and fit
 #experiment_filename, theory_filename, param_filename = get_filenames(heater_index)

@@ -45,12 +45,12 @@ class post:
         tag, data=message
         context = data['context']
         filename = data['filename']
-        print 'Starting to postprocess (%s)...' % context
-        time.sleep(2)
+        #print 'Starting to postprocess (%s)...' % context
+        time.sleep(.5)
         count_rates = {'a':0, 'b':1}
         data={'context':context, 'count_rates': count_rates}
         self.pipe.send(('count_rates', data))
-        print 'Finished postprocessing, wrote to disk etc'
+        #print 'Finished postprocessing, wrote to disk etc'
 
 
     def shutdown(self, *args):
@@ -65,35 +65,35 @@ class coincidence_counter:
     An asynchrous coincidence counting system.
     Data aquisition and postprocessing run in parallel subprocesses.
     '''
-    def __init__(self, callback=None):
+    def __init__(self, callback=None, timeout=5):
         ''' Initialize both sub-processes '''
         # Create hook to SIGINT
         signal.signal(signal.SIGINT, self.shutdown)
 
-        # Output of text
+        # Interface
         self.callback=callback if callback else sys.stderr.write
+        self.timeout=timeout
 
-        # Build the communication network
+
+        # Start up the postprocessing process and build the communication network
         self.pipe, post_pipe = Pipe()
-
-        # Start up the postprocessing process
         self.post = Process(target=post, name='post', args=(post_pipe,))
         self.post.start()
 
-        # Holder for latest count rates
-        self.latest_count_rates=None
-
-
     def count(self, integration_time, context):
         ''' Count coincidences '''
-        print 'Counting...'
+        print 'count %s' % context['position']
         time.sleep(integration_time)
-        print 'Done'
+        #print 'Done'
         self.pipe.send(('tdc', {'filename':'C:/awdawdawd/', 'context':context}))
         while self.pipe.poll():
-            key, value = self.pipe.recv()
-            if key=='count_rates': self.latest_count_rates=value
+            data = self.pipe.recv()
+            if data[0]=='count_rates': self.callback(data)
 
+    def collect(self):
+        if self.pipe.poll(self.timeout):
+            data = self.pipe.recv()
+            if data[0]=='count_rates': self.callback(data)
 
     def shutdown(self):
         ''' Shut down carefully '''
@@ -102,13 +102,21 @@ class coincidence_counter:
         
 
 if __name__=='__main__':
-    def callback(x):
-        print x
+    def receive_counts(data):
+        print 'recvd data', data[1]['context']['position']
 
-    c=coincidence_counter(callback=callback)
+    c=coincidence_counter(callback=receive_counts)
     for position in range(5):
-        c.count(5, {'position': position}) 
-        print c.latest_count_rates
+        c.count(1, {'position': position}) 
+        c.collect()
+
+    print 'doing something boring...'
+    time.sleep(10)
+    print 'finished the boring thing'
+
+    for position in range(10,20):
+        c.count(1, {'position': position}) 
+    c.collect()
     c.shutdown()
 
     #for i in range(10):

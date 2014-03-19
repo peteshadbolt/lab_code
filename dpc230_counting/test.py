@@ -84,7 +84,6 @@ class daq(worker):
         self.send_text_message('Starting to count...')
         time.sleep(data['integration_time'])
         self.send_text_message('Finished counting')
-        self.send_message('finished_counting', None)
         self.send_message('tdc', \
                 {'filename':'C:/awdawdawd/', 'context':context})
 
@@ -147,7 +146,7 @@ class coincidence_counter:
     def __init__(self, callback=None):
         ''' Initialize both sub-processes '''
         # Keep track of counting
-        self.queue_size=0
+        self.pending_requests=0
 
         # Output of text
         self.callback=callback if callback else sys.stderr.write
@@ -174,18 +173,19 @@ class coincidence_counter:
         ''' Count coincidences '''
         self.send_message('count', {'integration_time':integration_time,
                          'context': context})
-        self.queue_size+=1
+        self.pending_requests+=1
 
     def collect(self):
         ''' Try to pick up some data '''
+        if self.pending_requests==1: 
+            print 'only had one pending request'
+            return None
         while True:
             tag, data=self.rx.recv()
             if tag=='text': 
                 callback(data)
-            elif tag=='finished_counting': 
-                self.queue_size+=-1
-                if self.queue_size==0: return None
             elif tag=='count_rates': 
+                self.pending_requests+=-1
                 return data
 
     def shutdown(self):
@@ -198,9 +198,23 @@ if __name__=='__main__':
 
     c=coincidence_counter(callback=callback)
     for i in range(5):
-        c.count(1, {'i_value': i}) 
+        position=5+i/10.
+        print 'moved motor controller to %.1f' % position
+        c.count(1, {'mc_position': position}) 
         print c.collect()
     print c.collect()
+
+    print 'doing something else...'
+    time.sleep(5)
+    print 'done'
+
+    for i in range(5):
+        position=5+i/10.
+        print 'moved motor controller to %.1f' % position
+        c.count(1, {'mc_position': position}) 
+        print c.collect()
+    print c.collect()
+
     c.shutdown()
 
     #for i in range(10):

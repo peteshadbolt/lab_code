@@ -2,43 +2,31 @@ import os, time
 import wx
 from qy import settings
 from gui_components import *
+from multiprocessing import Process, Pipe
 
-class counts_gui(wx.Frame):
+
+class photon_elf(wx.Frame):
     ''' A simple GUI to talk to counting systems '''
-    def __init__(self, pipe):
+    def __init__(self, pipe=None):
         ''' Constructor '''
-        self.pipe=pipe
+        # Figure out where we should send/recieve data
+        self.send = (lambda x: x) if pipe==None else pipe.send
+        self.recv = (lambda x: x) if pipe==None else pipe.recv
+
+        # Start building
         self.app = wx.App(False)
         self.build()
         self.load_defaults()
-
-    
-    def mainloop(self):
-        ''' The main loop '''
         self.app.MainLoop()
-
-    
-    #def check_messages(self):
-        #while self.pipe.poll():
-            #message=self.hardware_pipe.recv()
-            #if message[0] == 'count_rates': 
-                #pass
-                #counts=[]
-                #for index, item in enumerate(message['count_rates'].items()):
-                    #key, value = item
-                    #counts.append((index, key, value))
-                #filtered_counts=self.gui.browser.update_counts(counts)
-                #self.gui.graph.add_counts(filtered_counts)
 
 
     def build(self):
         ''' Builds the various pieces of the GUI ''' 
-        wx.Frame.__init__(self, None, title='FPGA', size=(500,100))
-        self.SetBackgroundColour(wx.Colour(212, 208, 200))
+        wx.Frame.__init__(self, None, title='PHOTON ELF', size=(500,100))
         self.Bind(wx.EVT_CLOSE, self.quit)
 
         # Build both panels
-        self.build_graph_panel()
+        self.graph=wxgraph.graph_panel(self)
         self.build_left_panel()
         
         # The main sizer
@@ -49,67 +37,77 @@ class counts_gui(wx.Frame):
         # Put things together
         self.SetSizerAndFit(self.mainsizer)
         self.Show()
-        self.SetMinSize((800,500))
-        self.SetSize((800,500))
+        self.SetMinSize((400,300))
+        self.SetSize((700,500))
+
         
     def build_left_panel(self):
         ''' Build the left panel '''
-
         # Prepare the panel
-        self.left_panel_sizer=wx.BoxSizer(wx.HORIZONTAL)
+        self.left_panel_sizer=wx.BoxSizer(wx.VERTICAL)
         self.left_panel=wx.Panel(self)
         self.left_panel.SetSizer(self.left_panel_sizer)
-        self.left_panel.SetMinSize((260, 100))
+        self.left_panel.SetMinSize((200, 100))
 
         # Status boxes
-        #status=wxbasics.output_box(self.left_panel ,border=True)
-        #self.left_panel_sizer.Add(status, 1, wx.EXPAND|wx.TOP, 5)
+        self.status=wx.StaticText(self.left_panel, label='DPC230 status', style=wx.ST_NO_AUTORESIZE)
+        self.status.SetFont(wx.Font(10, wx.MODERN, wx.NORMAL, wx.NORMAL))
+        self.left_panel_sizer.Add(self.status, 0, wx.EXPAND|wx.TOP, 5)
 
+        # Browser
+        self.browser=wxbrowser.browser(self.left_panel)
+        self.browser.bind_change(self.graph.clear)
+        self.left_panel_sizer.Add(self.browser, 0, wx.EXPAND|wx.ALL)
+        
         # Graph configuration
         #graph_config_sizer=wx.BoxSizer(wx.HORIZONTAL)
         #graph_config_sizer.Add((0,0), 1)
         #self.left_panel_sizer.Add(graph_config_sizer, 0, wx.BOTTOM, 8)
 
-        # Browser
-        self.browser=wxbrowser.browser(self.left_panel)
-        self.browser.bind_change(self.graph.clear)
-        
-
-    def build_graph_panel(self):
-        ''' build the right panel '''
-        self.graph=wxgraph.graph_panel(self)
-                
 
     def quit(self, *args):
         ''' Close down gracefully, and then destroy the window '''
         self.save_defaults()
-        self.pipe.send(('gui_quit', None))
+        self.send(('gui_quit', None))
         self.Destroy()
 
 
     def load_defaults(self):
+        ''' Load the most recently used settings '''
         patterns=settings.get('realtime.browser_searches')
-        #self.gui.browser.set_patterns(patterns)
+        self.browser.set_patterns(patterns)
         
+
     def save_defaults(self):
-        pass
-        #qy.settings.put('realtime.browser_searches', self.gui.browser.get_text_patterns())
+        ''' Save the settings for next time '''
+        settings.put('realtime.browser_searches', self.browser.get_patterns())
 
 
-class dummy_pipe:
+class threaded_gui:
+    ''' A multithreaded handler for the coincidence-count GUI '''
     def __init__(self):
-        pass
+        ''' Constructor '''
+        # Start up the GUI process and build the communication network
+        self.pipe, their_pipe = Pipe()
+        self.gui = Process(target=photon_elf, name='photon_elf', args=(their_pipe,))
+        self.gui.start()
 
-    def recv(self):
-        return None, None
+    def send(self, message):
+        ''' Send a message asynchrously to the GUI '''
+        self.pipe.send(message)
 
-    def send(self, arg):
-        return None
+    def recv(self, timeout=1):
+        ''' Try to get a message from the GUI, else timeout '''
+        if self.pipe.poll(timeout):
+            return self.pipe.recv()
 
 
 if __name__=='__main__':
-    g=counts_gui(dummy_pipe())
-    g.mainloop()
+    main=threaded_gui()
+    while True:
+        out=main.recv()
+        if out:
+            print out
 
 
 

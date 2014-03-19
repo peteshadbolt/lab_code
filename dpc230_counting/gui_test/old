@@ -54,3 +54,15 @@ class browser_block(wx.Panel):
         
     def set_value(self, value):
         self.output.set_value(value)
+
+    #def check_messages(self):
+        #while self.pipe.poll():
+            #message=self.hardware_pipe.recv()
+            #if message[0] == 'count_rates': 
+                #pass
+                #counts=[]
+                #for index, item in enumerate(message['count_rates'].items()):
+                    #key, value = item
+                    #counts.append((index, key, value))
+                #filtered_counts=self.gui.browser.update_counts(counts)
+                #self.gui.graph.add_counts(filtered_counts)

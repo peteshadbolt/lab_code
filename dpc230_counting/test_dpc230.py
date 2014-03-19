@@ -7,11 +7,13 @@ from qy.analysis import coincidence
 class postprocessor:
     ''' Processes timetags from the DPC230 in parallel with other tasks.'''
 
-    def __init__(self, pipe):
+    def __init__(self, pipe=None):
         ''' Constructor '''
         # Set up
-        self.name='post'
         self.pipe=pipe
+        self.poll = False if pipe==None else pipe.send
+        self.send = (lambda x: x) if pipe==None else pipe.send
+        self.recv = (lambda x: x) if pipe==None else pipe.recv
 
         # Connect to the DPC230 in simulation mode
         self.dpc_post=dpc230('postprocessing')
@@ -21,8 +23,8 @@ class postprocessor:
 
     def listen(self):
         ''' Constantly listen for messages from the top level process. '''
-        while self.pipe.poll(None):
-            message=self.pipe.recv()
+        while self.poll(None):
+            message=self.recv()
             self.handle_message(message)
 
 
@@ -53,10 +55,10 @@ class postprocessor:
         spc_filename = self.dpc_post.convert_raw_data(tdc1, tdc2)
         count_rates=coincidence.process_spc(spc_filename)
         data={'context':context, 'count_rates': count_rates}
-        self.pipe.send(('count_rates', data))
+        self.send(('count_rates', data))
 
 
-class coincidence_counter:
+class threaded_coincidence_counter:
     ''' 
     An asynchrous coincidence counting system.
     Data aquisition and postprocessing run in parallel subprocesses.
@@ -111,7 +113,7 @@ if __name__=='__main__':
         print '\nTop level received data:' 
         print data
 
-    c=coincidence_counter(callback=receive_counts)
+    c=threaded_coincidence_counter(callback=receive_counts)
 
     for position in range(5):
         c.count(1, {'position': position}) 

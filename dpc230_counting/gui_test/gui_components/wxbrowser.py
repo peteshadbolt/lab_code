@@ -1,5 +1,4 @@
 import wx
-import qy
 import qy.graphics
 
 class browser_block(wx.Panel):
@@ -27,15 +26,15 @@ class browser_block(wx.Panel):
         self.output_box.SetValue(value) 
 
     def get_input(self):
-        return self.input_box.GetValue(value) 
+        return self.input_box.GetValue() 
 
 class browser(wx.Panel):
     ''' A wx GUI component to efficiently look at many count rates '''
     def __init__(self, parent, number=16):
         ''' Constructor '''
         wx.Panel.__init__(self, parent)
-        self.build()
         self.number=number
+        self.build()
         
     def build(self):
         ''' Build the widget '''
@@ -46,18 +45,18 @@ class browser(wx.Panel):
             block=browser_block(parent=self, colour=colour)
             #block.bind(self.patterns_changed)
             self.blocks.append(block)
-            mainsizer.Add(block, 0, wx.TOP|wx.EXPAND, border=2)
+            mainsizer.Add(block, 0, wx.TOP|wx.EXPAND, border=0)
 
         self.SetSizerAndFit(mainsizer)
         
     def set_patterns(self, patterns):
         ''' Set all of the patterns (inputs) at once'''
         for i in range(min(len(patterns), len(self.blocks))):
-            self.blocks[i].set_label(patterns[i])
+            self.blocks[i].set_input(patterns[i])
         
     def get_patterns(self):    
         ''' Get all of the patterns as text '''
-        return [b.get_value() for b in self.blocks]
+        return [b.get_input() for b in self.blocks]
 
     def bind_change(self, function):
         ''' Bind a function to be called when anything is changed by the user '''

@@ -1,5 +1,5 @@
 @echo off
 cd %~dp0
-C:\Python26\python.exe main.py %*
+C:\Python27\python.exe main.py %*
 
 pause

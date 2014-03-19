@@ -12,12 +12,9 @@ class postprocessor:
         # Set up
         self.name='post'
         self.pipe=pipe
-
-        # Connect to the DPC230 in simulation mode
         self.dpc_post=dpc230('postprocessing')
-
-        # Start listening
         self.listen()
+
 
     def listen(self):
         ''' Constantly listen for messages from the top level process. '''
@@ -43,7 +40,7 @@ class postprocessor:
 
 
     def handle_tdc(self, message):
-        ''' Process some timetags '''
+        ''' Count coincidences in some timetags '''
         # Parse the message
         tag, data=message
         context = data['context']
@@ -70,34 +67,33 @@ class coincidence_counter:
         self.callback=callback if callback else sys.stderr.write
         self.timeout=timeout
 
-        # Start up the postprocessing process and build the communication network
+        # Start up the postprocessing thread and build the communication network
         self.pipe, post_pipe = Pipe()
         self.post = Process(target=postprocessor, name='post', args=(post_pipe,))
         self.post.start()
 
+
     def count(self, integration_time, context):
         ''' Count coincidences '''
-        print 'count'
-        # Check that they are not asking for huge integration times
-        if integration_time>1:
-            print 'This is not the right way to deal with integration times!'
-            integration_time=1
-
         # Count for the specified amount of time
+        assert(integration_time<=2)
         tdc1, tdc2 = self.dpc230.count(integration_time)
 
         # Send those timetags off to the postprocessor
         self.pipe.send(('tdc', {'tdc1':tdc1, 'tdc2':tdc2, 'context':context}))
         while self.pipe.poll():
             data = self.pipe.recv()
-            if data[0]=='count_rates': self.callback(data)
-                
+
 
     def collect(self):
+        ''' 
+        After a series of sequential calls to count(), 
+        call collect() to pick up the last bits of data 
+        '''
         if self.pipe.poll(self.timeout):
             data = self.pipe.recv()
             if data[0]=='count_rates': self.callback(data)
-        #self.collect()
+
 
     def shutdown(self, *args):
         ''' Shut down carefully '''
@@ -115,7 +111,7 @@ if __name__=='__main__':
 
     for position in range(5):
         c.count(1, {'position': position}) 
-    c.collect()
+        c.collect()
 
     c.shutdown()
 

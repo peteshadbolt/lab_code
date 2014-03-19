@@ -1,0 +1,56 @@
+
+class browser_input(wx.TextCtrl):
+    def __init__(self, **args):
+        ''' This is where the user types '''
+        wx.TextCtrl.__init__(self) 
+        self.SetFont(wx.Font(15, wx.DEFAULT, wx.NORMAL, wx.NORMAL))
+        
+    def set_value(self, value):
+        ''' Set the label '''
+        self.SetValue(value)
+        
+    def get_value(self):
+        ''' Get the label '''
+        return self.GetValue().upper()
+
+class browser_output(wx.StaticText):
+    def __init__(self, **args):
+        ''' This is where we show count rates '''
+        if 'colour' in args: self.SetBackgroundColour(args['colour'])
+        wx.StaticText.__init__(self, label='', style=wx.ST_NO_AUTORESIZE|wx.ALIGN_RIGHT)
+        self.text.SetFont(wx.Font(18, wx.DEFAULT, wx.NORMAL, wx.NORMAL))
+        self.text.SetLabel('')
+        
+    def set_value(self, value):
+        ''' Set the value of the label '''
+        if value==None:
+            self.SetLabel('--')
+        else:
+            self.SetLabel(str(int(value)))
+
+class browser_block(wx.Panel):
+    def __init__(self, **args):
+        ''' a label box with an optional border '''
+        wx.Panel.__init__(self, parent=args['parent'])
+        self.colour=wx.Colour(*args['colour'])
+        sizer=wx.BoxSizer(wx.HORIZONTAL)
+        
+        self.input=browser_input(self)
+        self.output=browser_output(self, colour=self.colour)
+        
+        sizer.Add(self.input, 0, wx.RIGHT|wx.LEFT, 2)
+        sizer.Add(self.output, 1, wx.EXPAND)
+        self.SetSizerAndFit(sizer)
+        self.Fit()
+        
+    def bind(self, function):
+        self.input.Bind(wx.EVT_TEXT, function)
+        
+    def get_value(self):
+        return self.input.get_value()
+        
+    def set_label(self, value):
+        self.input.set_value(value)
+        
+    def set_value(self, value):
+        self.output.set_value(value)

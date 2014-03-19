@@ -62,8 +62,8 @@ class counts_gui(wx.Frame):
         self.left_panel.SetMinSize((260, 100))
 
         # Status boxes
-        status=wxbasics.output_box(self.left_panel ,border=True)
-        self.left_panel_sizer.Add(status, 1, wx.EXPAND|wx.TOP, 5)
+        #status=wxbasics.output_box(self.left_panel ,border=True)
+        #self.left_panel_sizer.Add(status, 1, wx.EXPAND|wx.TOP, 5)
 
         # Graph configuration
         #graph_config_sizer=wx.BoxSizer(wx.HORIZONTAL)

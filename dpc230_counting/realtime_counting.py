@@ -1,9 +1,9 @@
 
 import time, sys
-from qy.hardware.wrappers.coincidence_counter import threaded_coincidence_counter
-from qy.hardware.wrappers.photon_elf import threaded_photon_elf
+from qy.hardware.dpc230 import coincidence_counter
+from qy.gui.coincidence_counting import gui
 from qy.formats import ctx
-        
+
 
 if __name__=='__main__':
 
@@ -12,27 +12,27 @@ if __name__=='__main__':
         # Extract pertinent information
         key, value=data
 
-        data = elf.recv()
+        data = interface.recv()
         if data!=None and data[0]=='gui_quit':
             counter.shutdown()
             sys.exit(0)
 
-        if key=='count_rates': 
-            elf.send('count_rates', value['count_rates'])
+        if key=='count_rates':
+            interface.send('count_rates', value['count_rates'])
 
     def dpc_callback(message):
         ''' Handles messages from the DPC230 '''
-        elf.send('status', message)
+        interface.send('status', message)
 
     # The GUI
-    elf=threaded_photon_elf()
+    interface=gui()
 
     # The counting gear
-    counter=threaded_coincidence_counter(callback=handle_data, dpc_callback=dpc_callback)
+    counter=coincidence_counter(callback=handle_data, dpc_callback=dpc_callback)
 
     while True:
-        counter.count(1, {}) 
+        counter.count(1, {})
 
     counter.shutdown()
-    #elf.shutdown()
+    #interface.shutdown()
 

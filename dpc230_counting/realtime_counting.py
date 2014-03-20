@@ -1,7 +1,6 @@
-
 import time, sys
 from qy.hardware.dpc230 import coincidence_counter
-from qy.gui.coincidence_counting import gui
+from qy.gui.dpc230 import gui
 from qy.formats import ctx
 
 

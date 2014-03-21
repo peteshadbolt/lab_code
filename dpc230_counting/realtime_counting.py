@@ -10,14 +10,20 @@ if __name__=='__main__':
         ''' Handles data from the counting system '''
         # Extract pertinent information
         key, value=data
-
-        data = interface.recv()
-        if data!=None and data[0]=='gui_quit':
-            counter.shutdown()
-            sys.exit(0)
-
         if key=='count_rates':
             interface.send('count_rates', value['count_rates'])
+
+    def check_gui():
+        ''' Check the state of the gui '''
+        for key, value in interface.collect():
+            if key=='gui_quit':
+                counter.shutdown()
+                sys.exit(0)
+            elif key=='delays':
+                counter.set_delays(value)
+            elif key=='coincidence_window':
+                counter.set_window(value)
+
 
     def dpc_callback(message):
         ''' Handles messages from the DPC230 '''
@@ -30,7 +36,8 @@ if __name__=='__main__':
     counter=coincidence_counter(callback=handle_data, dpc_callback=dpc_callback)
 
     while True:
-        counter.count(1, {})
+        counter.count({})
+        check_gui()
 
     counter.shutdown()
     #interface.shutdown()

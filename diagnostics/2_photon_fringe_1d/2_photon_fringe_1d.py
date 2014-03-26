@@ -29,7 +29,8 @@ def get_filenames(heater_index):
     experiment_filename='data/%d_experiment_%s.npy' % (heater_index,start_time)
     theory_filename='data/%d_theory_%s.npy' % (heater_index,start_time)
     param_filename='data/%d_parameters_%s.npy' % (heater_index,start_time)
-    return experiment_filename, theory_filename, param_filename
+    hold_table_filename='data/%d_hold_table_%s.txt' % (heater_index,start_time)
+    return experiment_filename, theory_filename, param_filename, hold_table_filename
 
 def do_experiment(phases, ontime=2, offtime=12):
     voltages=table.get_voltages(phases)
@@ -90,8 +91,9 @@ def plot_now(experiment, theory, parameter_space, do_fit):
             fit_space=np.linspace(0, 3*pi, 300)
             fit=fit_func(fitted_params, fit_space)
             plot_curve(fit_space, fit, 'b-')
+            print fitted_params
         
-    plt.savefig('plots/1d_sweep_%s.pdf' % (start_time,))
+    plt.savefig('plots/%d_1d_sweep_%s.pdf' % (heater_index,start_time))
     plt.close()
 
     
@@ -127,7 +129,10 @@ def acquire_data(heater_index, N=20, hold=[]):
     
     # Normalize, save and return data
     #data=data/np.amax(data)
-    experiment_filename, theory_filename, param_filename = get_filenames(heater_index)
+    experiment_filename, theory_filename, param_filename, hold_table_filename = get_filenames(heater_index)
+    file=open(hold_table_filename, "w")
+    file.write(str(hold_table))
+    file.close()
     np.save(experiment_filename, experiment)
     np.save(theory_filename, theory)
     np.save(param_filename, parameter_space)
@@ -138,7 +143,7 @@ start_time=timestamp()
 device=lo.beamsplitter_network(json='cnot_mz.json')
 simulator=lo.simulator(device, nphotons=2)
 simulator.set_input_state([1,3])
-simulator.set_visibility(0.95)
+simulator.set_visibility(0.99)
 dac=dac.dac()
 fpga=fpga()
 fpga.read()
@@ -149,13 +154,13 @@ table=calibration_table()
 
 heater_index = 6
 #hold_table=[[0,pi/2],[2,0], [6,pi/2]]
-hold_table=list(enumerate([pi/2,0,0,0,0,pi/2,0,pi/2]))
+hold_table=list(enumerate([pi,0,0,0,0,0,0,0]))
 
 # Take data
 acquire_data(heater_index, hold=hold_table, N=40)
 
 # Reload and fit
-experiment_filename, theory_filename, param_filename = get_filenames(heater_index)
+experiment_filename, theory_filename, param_filename, hold_table_filename = get_filenames(heater_index)
 experiment=np.load(experiment_filename)
 theory=np.load(theory_filename)
 parameter_space=np.load(param_filename)

@@ -29,8 +29,10 @@ def do_measurement(phases, ontime=1, offtime=12):
     
 def new_sample(device):
     #phases=[0,pi,0,0,0,0,0,0]
-    phases=[pi,pi,0,0,0,0,0,0]
-    #phases=np.random.uniform(0,np.pi*2,8)
+    #phases=[pi,pi,0,0,0,0,0,0]
+    phases=np.random.uniform(0,np.pi*2,8)
+    phases[6]=0.93361981
+    phases[0]=np.pi
     counts=do_measurement(phases, ontime=2)
     
     coincidences=np.array(counts[8:12])

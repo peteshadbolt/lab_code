@@ -10,22 +10,21 @@ def plot_curve(parameter_space, data, style):
     
 def phase_voltage(p, v): 
     ''' Phase as a function of voltage '''
-    return p[0]+p[1]*(v**2)
+    return p[0]+p[1]*(v**2)+p[2]*v
 
-#I'VE MESSED AROUND WITH THIS - ALEX
-def counts_phase(p, phase): 
+def counts_phase(phase,total_counts): 
     ''' Counts (intensity) as a function of phase '''
-    return p[2]*(1-np.sin(phase/2)*np.sin(phase/2))
+    return total_counts*(1-np.sin(phase/2)*np.sin(phase/2))
 
-def counts_voltage(p, voltage): 
+def counts_voltage(p, voltage, total_counts): 
     ''' Counts as a function of voltage '''
-    return counts_phase(p, phase_voltage(p, voltage))
+    return counts_phase(phase_voltage(p, voltage),total_counts)
 
-def errfunc(p, voltage, count): 
+def errfunc(p, voltage, count, total_counts): 
     ''' Error function, used in fitting '''
-    return np.sum(np.power(counts_voltage(p, voltage)-count, 2))
+    return np.sum(np.power(counts_voltage(p, voltage, total_counts)-count, 2))
 
-def fit_fringe(voltages, counts, nfits=3, guess=None):
+def fit_fringe(voltages, counts, total_counts, nfits=3, guess=None):
     ''' Fit a phase-voltage curve to some fringelike data '''
     # potentially choose a guess automatically
     if guess==None:
@@ -35,13 +34,13 @@ def fit_fringe(voltages, counts, nfits=3, guess=None):
 
     # restart nelder-mead a few times
     for i in range(nfits):
-        p0, best0, db, dc, warning = fmin(errfunc, p0, args=(voltages, counts), disp=0, full_output=1)
+        p0, best0, db, dc, warning = fmin(errfunc, p0, args=(voltages, counts,total_counts), disp=0, full_output=1)
     return p0
     
-experiment_filename='data/6_experiment_fri21mar2014_1507pm.npy'
+experiment_filename='data/6_experiment_wed26mar2014_1300pm.npy'
 experiment=np.load(experiment_filename)
 
-parameter_space_filename='data/6_parameters_fri21mar2014_1507pm.npy'
+parameter_space_filename='data/6_parameters_wed26mar2014_1300pm.npy'
 parameter_space=np.load(parameter_space_filename)
 
 counts = experiment[:,3]
@@ -49,18 +48,22 @@ total_counts=experiment[:,4]
 #print experiment
 voltages = parameter_space
 #guess=[pi,1,0]
-guess=[ -1.60789628+np.pi,0.14141038,1800]
-fitted_params=fit_fringe(voltages, counts, guess=guess)
+guess=[ 0.93361981,0.09424765,0.37505169]
+#guess=[1.28719277,0.1467268,0]
+fitted_params=fit_fringe(voltages, counts, total_counts, guess=guess)
+#fitted_params=guess
 #fitted_params=[ -1.60789628+np.pi,0.14141038,1800,1]
 print fitted_params
+#fitted_params=guess
 
-fit_space=np.linspace(0, 7, 300)
-fit_counts=counts_voltage(fitted_params, fit_space)
+fit_space=np.linspace(0, 7, 40)
+fit_counts=counts_voltage(fitted_params, fit_space,total_counts)
 
 plt.subplot(211)
 plot_curve(fit_space, fit_counts, 'r-')
 plot_curve(voltages, counts, 'k.')
 
 plt.subplot(212)
+plt.text(0.05, 0.95, 'Total Counts', transform=plt.gca().transAxes, va='top')
 plot_curve(voltages, total_counts, 'b.-')
-plt.savefig('plots/fit_fri21mar2014_1507pm.pdf')
+plt.savefig('plots/alex_test_fit_wed26mar2014_1300pm.pdf')

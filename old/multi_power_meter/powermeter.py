@@ -4,7 +4,7 @@ import time
 class powermeter:
     """ This class talks to the 6-channel power meter"""
     
-    def __init__(self, COM=3):
+    def __init__(self, COM=8):
         self.serial=serial.Serial()
         self.serial.port=COM
         self.serial.timeout=10

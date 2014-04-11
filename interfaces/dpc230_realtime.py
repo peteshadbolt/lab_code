@@ -29,18 +29,18 @@ if __name__=='__main__':
 
     def dpc_callback(message):
         ''' Handles messages from the DPC230 '''
+        # Just pass the message on to the GUI
         interface.send('status', message)
 
-    # The GUI
+    # Make the GUI
     interface=gui()
 
-    # The counting gear
+    # Boot up the counting gear
     counter=coincidence_counter(callback=handle_data, dpc_callback=dpc_callback)
 
+    # Loop forever
     while True:
         counter.count({})
         check_gui()
 
-    counter.kill()
-    #interface.kill()
 

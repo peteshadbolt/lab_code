@@ -12,13 +12,17 @@ if __name__=='__main__':
             #print key, value
 
 
-    #def dpc_callback(message):
-        #''' Handles messages from the DPC230 '''
+    def smc100_callback(message):
+        ''' Handles messages from the SMC100 '''
+        print message
         #interface.send('status', message)
 
     # The motor controllers
-    motors=smc100()
-    print str(motors)
+    smc100=smc100(callback=smc100_callback)
+    print str(smc100)
+    smc100.actuators[3].home()
+    smc100.actuators[3].move(20)
+
 
     # The GUI
     #interface=gui()
@@ -29,5 +33,5 @@ if __name__=='__main__':
         #counter.count({})
         #check_gui()
 
-    motors.kill()
+    smc100.kill()
 

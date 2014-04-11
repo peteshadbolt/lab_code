@@ -3,6 +3,7 @@ import numpy as np
 from qy.hardware.powermeter import powermeter
 from qy.gui import coincidence_counting, wxbrowser 
 from qy.formats import ctx
+import qy.util
 from multiprocessing import Process, Pipe
 import wx
 
@@ -60,7 +61,8 @@ if __name__=='__main__':
             if key=='gui_quit':
                 sys.exit(0)
             elif key=='log_now':
-                data_file.write_list(['powers']+total.tolist())
+                data_file.write('powers', total.tolist())
+                print 'wrote ', total
 
 
     def dpc_callback(message):
@@ -74,7 +76,7 @@ if __name__=='__main__':
     powermeter=powermeter()
 
     # Output file
-    data_file=ctx()
+    data_file=ctx('data/%s.ctx' % qy.util.timestamp())
     data_file.write_metadata({'scan_label':'Looking at bright light'})
     total=np.zeros(6)
     print data_file

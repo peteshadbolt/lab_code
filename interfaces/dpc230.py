@@ -17,7 +17,7 @@ if __name__=='__main__':
         ''' Check the state of the gui '''
         for key, value in interface.collect():
             if key=='gui_quit':
-                counter.shutdown()
+                counter.kill()
                 sys.exit(0)
             elif key=='delays':
                 counter.set_delays(value)
@@ -41,6 +41,6 @@ if __name__=='__main__':
         counter.count({})
         check_gui()
 
-    counter.shutdown()
-    #interface.shutdown()
+    counter.kill()
+    #interface.kill()
 

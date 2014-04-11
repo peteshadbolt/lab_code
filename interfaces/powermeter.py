@@ -90,5 +90,5 @@ if __name__=='__main__':
         interface.send('count_rates', data)
         check_gui()
 
-    interface.shutdown()
+    interface.kill()
 

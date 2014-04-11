@@ -6,32 +6,37 @@ from qy.formats import ctx
 
 if __name__=='__main__':
 
-    #def check_gui():
-        #''' Check the state of the gui '''
-        #for key, value in interface.collect():
-            #print key, value
+    def check_gui():
+        ''' Check the state of the gui '''
+        for key, value in interface.collect():
+            if key=='gui_quit':
+                motors.kill()
+                sys.exit(0)
+            
 
 
     def smc100_callback(message):
         ''' Handles messages from the SMC100 '''
-        print message
-        #interface.send('status', message)
+        key, value = message
+        if key=='status':
+            interface.send(key, value)
 
-    # The motor controllers
-    smc100=smc100(callback=smc100_callback)
-    print str(smc100)
-    smc100.actuators[3].home()
-    smc100.actuators[3].move(20)
 
 
     # The GUI
-    #interface=gui()
+    interface=gui()
 
     # The motor controllers
+    motors=smc100(callback=smc100_callback)
 
-    #while True:
-        #counter.count({})
-        #check_gui()
+    print str(motors)
+    motors.actuators[3].home()
+    motors.actuators[3].move(20)
 
-    smc100.kill()
+
+    # The motor controllers
+    while True:
+        check_gui()
+
+    motors.kill()
 

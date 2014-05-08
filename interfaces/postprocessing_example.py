@@ -4,6 +4,10 @@ from matplotlib import pyplot as plt
 from glob import glob
 import os
 
+'''
+An example of reading and processing data from a dip-like measurement
+'''
+
 
 # Get a list of CTX files on the dekstop
 all_files=glob('C:/Users/Qubit/Desktop/data_from_example_scripts/*.ctx')
@@ -35,6 +39,7 @@ for data in my_file.stream('position'):
 ###############################
 
 # Define a lambda function "get_mn", which computes the "MN" count rate some raw data
+# This could equally be a named ("deffed") function.
 get_mn=lambda data: pattern_parser.parse_coincidence_pattern('MN', data)
 
 # Then we simply iterate over the file using map, getting two lists:
@@ -49,5 +54,4 @@ plt.xlabel('Position, mm')
 plt.ylabel('Count rate')
 plt.grid(color='gray')
 pdf_filename=os.path.splitext(filename)[0]+'.pdf'
-print pdf_filename
 plt.savefig(pdf_filename)

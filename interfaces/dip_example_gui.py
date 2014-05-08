@@ -28,17 +28,18 @@ if __name__=='__main__':
             print 'Recieved data for actual position %.3f' % context[which_motor]['position']
             if 'n' in count_rates: print 'n: %d' % count_rates['n']
             
-            # Just write the position to the file
+            # Write the actuator position to the file
             output_file.write('position', context[which_motor]['position'])
 
             # Write count rates to disk, and also forward them to the GUI
-            interface.send('count_rates', count_rates)
             output_file.write('count_rates', count_rates)
+            interface.send('count_rates', count_rates)
 
 
     def dpc_callback(message):
-        ''' Passes on messages from the DPC230 to the GUI'''
+        ''' Just passes on messages from the DPC230 to the GUI'''
         interface.send('status', message)
+
 
     ##################################################### 
     # START HERE 

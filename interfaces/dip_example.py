@@ -40,8 +40,8 @@ if __name__=='__main__':
     ##################################################### 
 
     # Get a file ready to store data
-    md={'label':'This is a test!', 'mood':'hungry for knowledge'}
-    output_file=ctx('C:/Users/Qubit/Desktop/data_from_example_scripts/', metadata=md)
+    metadata={'label':'This is a test!', 'mood':'hungry for knowledge'}
+    output_file=ctx('C:/Users/Qubit/Desktop/data_from_example_scripts/', metadata=metadata)
 
     # Dip parameters
     parameter_space = np.linspace(0, 10, 11)

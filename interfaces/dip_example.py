@@ -12,12 +12,9 @@ An example of dip-taking, without a GUI
 
 if __name__=='__main__':
     
-    def handle_data(data):
+    def handle_data((key, value)):
         ''' Define how to handle data coming from the counting system '''
-
-        key, value = data
-
-        if key=='count_rates':
+        if key=='coincidence_data':
             # We got some count rates
             count_rates=value['count_rates']
             # together with the context in which they were measured
@@ -33,6 +30,9 @@ if __name__=='__main__':
             # output_file.write('position', context[which_motor]['position'])
             # Write count rates to disk
             output_file.write('count_rates', count_rates)
+
+        elif key=='dpc230_status':
+            pass
 
 
     ##################################################### 
@@ -51,7 +51,7 @@ if __name__=='__main__':
     motor_controller=smc100(callback=None)
 
     # Connect to the counting gear and configure it
-    counter=coincidence_counter(callback=handle_data, dpc_callback=None)
+    counter=coincidence_counter(callback=handle_data)
     counter.set_integration_time(1)
 
      # Loop over a dip

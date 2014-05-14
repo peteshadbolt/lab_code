@@ -18,7 +18,7 @@ if __name__=='__main__':
 
         key, value = data
 
-        if key=='count_rates':
+        if key=='coincidence_data':
             # We got some count rates
             count_rates=value['count_rates']
             # together with the context in which they were measured
@@ -35,10 +35,8 @@ if __name__=='__main__':
             output_file.write('count_rates', count_rates)
             interface.send('count_rates', count_rates)
 
-
-    def dpc_callback(message):
-        ''' Just passes on messages from the DPC230 to the GUI'''
-        interface.send('status', message)
+        elif key=='dpc230_status':
+            interface.send('status', value)
 
 
     ##################################################### 
@@ -60,7 +58,7 @@ if __name__=='__main__':
     motor_controller=smc100(callback=None)
 
     # Connect to the counting gear and configure it
-    counter=coincidence_counter(callback=handle_data, dpc_callback=dpc_callback)
+    counter=coincidence_counter(callback=handle_data)
     counter.set_integration_time(1)
 
      # Loop over a dip

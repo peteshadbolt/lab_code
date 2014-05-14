@@ -6,12 +6,13 @@ from qy.formats import ctx
 
 if __name__=='__main__':
 
-    def handle_data(data):
+    def handle_data((key, value)):
         ''' Handles data from the counting system '''
-        # Extract pertinent information
-        key, value=data
-        if key=='count_rates':
+        # Pass the message on to the GUI
+        if key=='coincidence_data':
             interface.send('count_rates', value['count_rates'])
+        elif key=='dpc230_status':
+            interface.send('status', value)
 
     def check_gui():
         ''' Check the state of the gui '''
@@ -26,17 +27,11 @@ if __name__=='__main__':
             elif key=='integration_time':
                 counter.set_integration_time(value)
 
-
-    def dpc_callback(message):
-        ''' Handles messages from the DPC230 '''
-        # Just pass the message on to the GUI
-        interface.send('status', message)
-
     # Make the GUI
     interface=gui()
 
     # Boot up the counting gear
-    counter=coincidence_counter(callback=handle_data, dpc_callback=dpc_callback)
+    counter=coincidence_counter(callback=handle_data)
 
     # Loop forever
     while True:

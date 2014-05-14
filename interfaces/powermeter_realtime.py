@@ -9,7 +9,7 @@ import wx
 
 
 class gui_head(coincidence_counting.gui_head):
-    ''' A simple GUI for the DPC230 '''
+    ''' A GUI for the powermeter '''
     def __init__(self, pipe=None):
         ''' Constructor. Inherits from coincidence_counting '''
         coincidence_counting.gui_head.__init__(self, pipe)
@@ -34,7 +34,7 @@ class gui_head(coincidence_counting.gui_head):
         self.pipe.send(['log_now', 'awd'])
 
 class gui(coincidence_counting.gui):
-    ''' A Multithreaded handler for the DPC230 GUI '''
+    ''' Handle multithreading of the powermeter GUI '''
     def __init__(self):
         ''' Constructor. Inherits from coincidence_counting '''
 
@@ -48,13 +48,6 @@ class gui(coincidence_counting.gui):
 
 if __name__=='__main__':
 
-    def handle_data(data):
-        ''' Handles data from the counting system '''
-        # Extract pertinent information
-        key, value=data
-        if key=='count_rates':
-            interface.send('count_rates', value['count_rates'])
-
     def check_gui():
         ''' Check the state of the gui '''
         for key, value in interface.collect():
@@ -63,11 +56,6 @@ if __name__=='__main__':
             elif key=='log_now':
                 data_file.write('powers', total.tolist())
                 print 'wrote ', total
-
-
-    def dpc_callback(message):
-        ''' Handles messages from the DPC230 '''
-        interface.send('status', message)
 
     # The GUI
     interface=gui()

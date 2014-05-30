@@ -5,16 +5,6 @@ import argparse
 import os
 import json
 
-# Set up the command line parser
-parser = argparse.ArgumentParser(description='Cross-correlate')
-parser.add_argument('dpc_file',  type=str, help='The filename of an SPC file to process')
-parser.add_argument('pattern',  type=str, nargs='+', help='A start/stop pair, e.g. "AB"')
-parser.add_argument('-t',  '--integration_time',default=0, type=float, help='Integration time, in seconds')
-parser.add_argument('-w',  '--histogram_width', default=20, type=float, help='Histogram width, in ns')
-parser.add_argument('-g',  '--make_graph', nargs='?', const=True, default=False, type=bool, help='Should I make a graph?')
-parser.add_argument('-o',  '--output_filename', default=None, type=str, help='Where to write data/graphs')
-args = parser.parse_args()
-
 def compute_curves(dpc_file, patterns):
     ''' Get all the curves of interest '''
     alphabet='abcdefghijklmnop'
@@ -63,19 +53,30 @@ def plot(curves, filename):
     print 'Plotted a graph to %s' % filename
 
 
-# Gubbins
-if args.output_filename==None:
-    root_filename=os.path.splitext(args.dpc_file)[0]
-else:
-    root_filename=args.output_filename
+if __name__=='__main__':
+    # Set up the command line parser
+    parser = argparse.ArgumentParser(description='Cross-correlate')
+    parser.add_argument('dpc_file',  type=str, help='The filename of an SPC file to process')
+    parser.add_argument('pattern',  type=str, nargs='+', help='A start/stop pair, e.g. "AB"')
+    parser.add_argument('-t',  '--integration_time',default=0, type=float, help='Integration time, in seconds')
+    parser.add_argument('-w',  '--histogram_width', default=20, type=float, help='Histogram width, in ns')
+    parser.add_argument('-g',  '--make_graph', nargs='?', const=True, default=False, type=bool, help='Should I make a graph?')
+    parser.add_argument('-o',  '--output_filename', default=None, type=str, help='Where to write data/graphs')
+    args = parser.parse_args()
 
-# Do cross-correlation
-xc.set_integration_time(args.integration_time)
-xc.set_histogram_width(args.histogram_width)
-curves=compute_curves(args.dpc_file, args.pattern)
+    # Gubbins
+    if args.output_filename==None:
+        root_filename=os.path.splitext(args.dpc_file)[0]
+    else:
+        root_filename=args.output_filename
 
-# Save to disk
-save(curves, root_filename+'.json')
+    # Do cross-correlation
+    xc.set_integration_time(args.integration_time)
+    xc.set_histogram_width(args.histogram_width)
+    curves=compute_curves(args.dpc_file, args.pattern)
 
-# Optionally, plot the graph
-if args.make_graph: plot(curves, root_filename+'.pdf')
+    # Save to disk
+    save(curves, root_filename+'.json')
+
+    # Optionally, plot the graph
+    if args.make_graph: plot(curves, root_filename+'.pdf')

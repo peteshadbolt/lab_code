@@ -24,7 +24,7 @@ class heaters:
         self.serial.stopbits=serial.STOPBITS_ONE
         self.heaters=8
         self.heater_boards=3
-        self.vmax = 5
+        self.vmax = 12
 		# Note vipall doesn't work for all heaters yet so leave self.heaters=8.  The heaters will still apply voltages
         try:
             self.serial.open()
@@ -69,6 +69,7 @@ class heaters:
     def send_one_voltage(self, heater, voltage):
         prefix = 'v'
         command = '%s%d=%.9f' % (prefix, heater, voltage)
+        print command
         response = self.send_rcv(command)
         if response != 'OK':
 			self.kill()
@@ -99,6 +100,35 @@ class heaters:
 			assert(response.strip()=='OK'), response
 		return 'all zero'
     
+    def query_v(self, heater_index):
+        return self.send_rcv('v'+str(heater_index)+'?')
+
+    def query_i(self, heater_index):
+        return self.send_rcv('i'+str(heater_index)+'?')
+    
+    def query_p(self, heater_index):
+        return self.send_rcv('p'+str(heater_index)+'?')
+    
+    def vip_heater(self, heater_index):
+        output = {}
+        voltage = float(self.query_v(heater_index).split()[0])
+        current = float(self.query_i(heater_index).split()[0])
+        power = float(self.query_p(heater_index).split()[0])
+        this_heater={'voltage': voltage, 'current': current, 'power': power}
+        output[heater_index] = this_heater
+        return output
+    
+    def vipall(self):
+        '''Return vip information for all heaters'''
+        output = {}
+        for i in range(self.actual_heaters):
+            voltage = float(self.query_v(i).split()[0])
+            current = float(self.query_i(i).split()[0])
+            power = float(self.query_p(i).split()[0])
+            this_heater={'voltage': voltage, 'current': current, 'power': power}
+            output[i] = this_heater
+        return output 
+        
 	#TODO make a dictionary not reliant on 'vipall' but query the board with vi? for i 1 to heaters
     def dict(self):
 		''' Dictionary for vip '''

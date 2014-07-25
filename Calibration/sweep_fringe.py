@@ -34,10 +34,11 @@ def handle_data(data):
 
 			
 			
-def take_fringe(reck_heaters, heater_index, min_voltage, max_voltage, N, int_time):
-	metadata={'label':'Fringe Sweep', 'heater': heater_index}
-	output_file = ctx('C:/Users/Qubit/Code/lab_code/Calibration/Calibration/data/fringe_on_heater_' + str(heater_index), metadata=metadata)	
-
+def take_fringe(reck_heaters, heater_index, min_voltage, max_voltage, N, int_time, metadata):
+	
+	global output_file
+	output_file = ctx('C:/Users/Qubit/Code/lab_code/Calibration/Calibration/data/', metadata=metadata)	
+	output_file_name = output_file.filename
 	parameter_space=np.linspace(min_voltage, max_voltage, N)
 	
 	# Connect to the counting gear and configure it
@@ -45,7 +46,7 @@ def take_fringe(reck_heaters, heater_index, min_voltage, max_voltage, N, int_tim
 	counter.set_integration_time(int_time)
 
 	for index, parameter in enumerate(parameter_space):
-		print parameter
+		print 'Setting voltage %s' % str(parameter)
 		reck_heaters.send_one_voltage(heater_index, parameter)
 		
 		current_context=reck_heaters.dict()
@@ -56,7 +57,7 @@ def take_fringe(reck_heaters, heater_index, min_voltage, max_voltage, N, int_tim
 	# Close connections to hardware
 	counter.kill()
 	
-	return output_file
+	return output_file_name
 
 	
 def plot_curve(parameter_space, data):

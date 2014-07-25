@@ -185,7 +185,7 @@ class Calibrate:
 		return v
 		
 	def plot(self, params, counts, voltages, heater_index):
-		print heater_index
+		#print heater_index
 		v = np.linspace(-15,15,10000)
 		plt.plot(v,fitfunc(params,v), label = 'Fit')
 		plt.plot(voltages,counts,'x', marker = '+', markersize = 5,label = 'data')
